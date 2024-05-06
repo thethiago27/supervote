@@ -3,7 +3,7 @@ name: Update Function Code
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   get-filenames:
