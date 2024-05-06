@@ -2,9 +2,9 @@ from sqlalchemy import Column, Integer, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
-from db_schema_layer.poll.poll_options_schema import PollOptions
-from db_schema_layer.poll.poll_schema import Poll
-from db_schema_layer.user.user_schema import User
+from db_schema_layer.python.poll_options_schema import PollOptions
+from db_schema_layer.python.poll_schema import Poll
+from db_schema_layer.python.user_schema import User
 
 Base = declarative_base()
 

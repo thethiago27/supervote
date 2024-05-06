@@ -3,8 +3,8 @@ import logging
 from datetime import datetime
 
 import boto3
-from db_schema_layer import db_connection
-from db_schema_layer.poll.poll_vote_schema import PollVote
+from db_schema_layer.python import db_connection
+from db_schema_layer.python.poll_vote_schema import PollVote
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

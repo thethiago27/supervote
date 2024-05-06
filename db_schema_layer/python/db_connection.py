@@ -4,7 +4,7 @@ import os
 
 import boto3
 
-from db_schema_layer.db_utils import create_db_session
+from db_schema_layer.python.db_utils import create_db_session
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
