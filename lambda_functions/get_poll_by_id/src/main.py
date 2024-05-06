@@ -23,11 +23,11 @@ def get_poll_options_by_poll_id(poll_id):
 
 def lambda_handler(event, context):
     try:
-        poll_id = event.get('poll_id')
+        poll_id = event.get('poll-id')
         poll = get_poll_by_id(poll_id)
 
         if not poll_id:
-            logger.info("Missing 'poll_id' in event data")
+            logger.info("Missing 'poll-id' in event data")
             return {
                 'statusCode': 400,
                 'body': "Missing 'poll_id' in request data"
