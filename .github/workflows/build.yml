@@ -1,0 +1,90 @@
+name: Update Function Code
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  get-filenames:
+    runs-on: ubuntu-latest
+    outputs:
+      lambdaArray: ${{ steps.lambda_functions.outputs.lambdas }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Get functions filenames
+        id: lambda_functions
+        run: |
+          directories=$(tree lambda_functions -d -L 1 -J | jq -j -c '.[0].contents | map(.name)')
+          echo ::set-output name=lambdas::${directories}
+
+  update-lambda-layer:
+    runs-on: ubuntu-latest
+    outputs:
+      lambda_layer_version: ${{ steps.lambda_layer.outputs.lambda_layer_version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+
+      - name: Zip And Install Lambda Layer
+        run: |
+          cd db_schema_layer
+          pip install -r requirements.txt -t .
+          zip -r lambda_layer.zip .
+
+      - name: Set up AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Update Lambda Layer code
+        run: aws lambda publish-layer-version --layer-name dbschema --zip-file fileb://db_schema_layer/lambda_layer.zip
+
+      - name: Set output
+        id: lambda_layer
+        run: echo ::set-output name=lambda_layer_version::$(aws lambda list-layer-versions --layer-name dbschema --query 'LayerVersions[0].Version' --output text)
+
+  update-code:
+    needs: [get-filenames, update-lambda-layer]
+    strategy:
+      matrix:
+        lambda: ${{ fromJson(needs.get-filenames.outputs.lambdaArray) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+
+      - name: Zip And Install Lambda functions
+        run: |
+          cd lambda_functions/${{matrix.lambda}}
+          pip install -r requirements.txt -t .
+          zip -r ${{matrix.lambda}}.zip .
+
+      - name: Set up AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Update Lambdas code
+        run: aws lambda update-function-code --function-name=${{matrix.lambda}} --layers=${{needs.update-lambda-layer.outputs.lambda_layer_version}} --zip-file=fileb://lambda_functions/${{matrix.lambda}}/${{matrix.lambda}}.zip
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1
