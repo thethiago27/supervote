@@ -1,8 +1,8 @@
 import json
 import logging
-from db_schema_layer import db_connection
-from db_schema_layer.poll_options_schema import PollOptions
-from db_schema_layer.poll_schema import Poll
+import db_connection
+from poll_options_schema import PollOptions
+from poll_schema import Poll
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
