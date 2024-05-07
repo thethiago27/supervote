@@ -3,14 +3,16 @@ import logging
 from typing import Dict, List, Optional
 
 import db_connection
-from poll_options_schema import PollOptions
-from poll_schema import Poll
+from poll_options_schema import PollOptions, Base as PooloptionsBase
+from poll_schema import Poll, Base
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 session = db_connection.get_db_connection()
 engine = db_connection.create_db_session(session)
+Base.metadata.create_all(engine)
+PooloptionsBase.metadata.create_all(engine)
 
 
 def get_poll_by_id(poll_id: int) -> Optional[Poll]:
