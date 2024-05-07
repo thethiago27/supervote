@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
-from db_schema_layer.python.poll_schema import Poll
+from poll_schema import Poll
 
 Base = declarative_base()
 

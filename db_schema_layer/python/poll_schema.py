@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
-from db_schema_layer.python.user_schema import User
+from user_schema import User
 
 Base = declarative_base()
 
