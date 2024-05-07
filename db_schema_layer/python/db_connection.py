@@ -12,9 +12,8 @@ logger.setLevel(logging.INFO)
 DB_ENDPOINT = os.getenv('DB_ENDPOINT')
 DB_SECRET_NAME = os.getenv('DB_SECRET_NAME')
 
-session = boto3.Session(profile_name='default')
-client = session.client('rds')
-secrets_client = session.client('secretsmanager')
+client = boto3.client('rds')
+secrets_client = boto3.client('secretsmanager')
 
 
 def get_secrets():
