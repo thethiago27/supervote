@@ -1,44 +1,54 @@
 import json
 import logging
 import os
+from typing import Dict, Union, Any
 
 import boto3
-
-from db_utils import create_db_session
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import scoped_session, sessionmaker, Session
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-DB_ENDPOINT = os.getenv('DB_ENDPOINT')
-DB_SECRET_NAME = os.getenv('DB_SECRET_NAME')
-
-client = boto3.client('rds')
-secrets_client = boto3.client('secretsmanager')
+rds_client = boto3.client('rds')
+secrets_manager_client = boto3.client('secretsmanager')
 
 
-def get_secrets():
-    secret_response = secrets_client.get_secret_value(SecretId=DB_SECRET_NAME)
-    secrets = json.loads(secret_response['SecretString'])
-    return secrets
+def get_secrets(secret_name: str) -> Dict:
+    response = secrets_manager_client.get_secret_value(SecretId=secret_name)
+    return json.loads(response['SecretString'])
 
 
-def get_db_password():
-    secrets = get_secrets()
-    response = client.generate_db_auth_token(
-        DBHostname=DB_ENDPOINT,
+def get_db_password(db_endpoint: str, secrets: Dict) -> str:
+    response = rds_client.generate_db_auth_token(
+        DBHostname=db_endpoint,
         Port=secrets['port'],
         DBUsername=secrets['username'],
     )
-    return response
+    return response['AuthToken']
 
 
-def get_db_connection():
-    secrets = get_secrets()
-    password = get_db_password()
-    conn = f"postgresql://{secrets['username']}:{password}@{DB_ENDPOINT}:{secrets['port']}/{secrets['dbname']}?sslmode=require"
+def create_db_engine(db_endpoint: str, secrets: Dict) -> Engine:
+    password = get_db_password(db_endpoint, secrets)
+    conn_string = f"postgresql://{secrets['username']}:{password}@{db_endpoint}:{secrets['port']}/{secrets['dbname']}?sslmode=require"
+    return create_engine(conn_string)
 
-    logger.info(f"Connecting to DB: {conn}")
-    engine = create_db_session(conn)
-    db_session = create_db_session(engine)
 
-    return db_session
+def create_session_factory(engine: Engine) -> scoped_session[Union[Session, Any]]:
+    return scoped_session(sessionmaker(bind=engine))
+
+
+def get_db_session() -> sessionmaker:
+    db_endpoint = os.getenv('DB_ENDPOINT')
+    db_secret_name = os.getenv('DB_SECRET_NAME')
+
+    if not db_endpoint or not db_secret_name:
+        logger.error("Missing required environment variables: DB_ENDPOINT or DB_SECRET_NAME")
+        raise ValueError("Missing required environment variables")
+
+    secrets = get_secrets(db_secret_name)
+    engine = create_db_engine(db_endpoint, secrets)
+    session_factory = create_session_factory(engine)
+
+    return session_factory
