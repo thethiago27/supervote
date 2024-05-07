@@ -45,10 +45,11 @@ def lambda_handler(event, context):
         logger.info(f"Poll found successfully: {poll}")
 
         return {
+
             'statusCode': 200,
             'body': json.dumps({
-                'poll': poll.__dict__,
-                'poll_options': [poll_option.__dict__ for poll_option in poll_options]
+                'poll': poll.to_dict(),
+                'poll_options': [option.to_dict() for option in poll_options]
             })
         }
 
