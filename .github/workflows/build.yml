@@ -36,7 +36,7 @@ jobs:
       - name: Zip And Install Lambda Layer
         run: |
           cd db_schema_layer
-          pip install -r requirements.txt -t .
+          pip install -r requirements.txt -t "python/"
           zip -r lambda_layer.zip .
 
       - name: Set up AWS Credentials
