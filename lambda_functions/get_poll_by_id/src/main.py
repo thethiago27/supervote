@@ -3,7 +3,6 @@ import logging
 from typing import Dict, List, Optional
 
 import db_connection
-from poll_options_schema import PollOptions, Base as PooloptionsBase
 from poll_schema import Poll, Base
 
 logger = logging.getLogger(__name__)
@@ -12,15 +11,14 @@ logger.setLevel(logging.INFO)
 session = db_connection.get_db_connection()
 engine = db_connection.create_db_session(session)
 Base.metadata.create_all(engine)
-PooloptionsBase.metadata.create_all(engine)
 
 
 def get_poll_by_id(poll_id: int) -> Optional[Poll]:
     return session.query(Poll).filter(Poll.id == poll_id).first()
 
 
-def get_poll_options_by_poll_id(poll_id: int) -> List[PollOptions]:
-    return session.query(PollOptions).filter(PollOptions.poll_id == poll_id).all()
+# def get_poll_options_by_poll_id(poll_id: int) -> List[PollOptions]:
+#     return session.query(PollOptions).filter(PollOptions.poll_id == poll_id).all()
 
 
 @db_connection.db_session
@@ -35,14 +33,13 @@ def lambda_handler(event: Dict, context: Dict) -> Dict:
         logger.info(f"Poll with id {poll_id} not found")
         return {'statusCode': 404, 'body': f"Poll with id {poll_id} not found"}
 
-    poll_options = get_poll_options_by_poll_id(poll_id)
+    # poll_options = get_poll_options_by_poll_id(poll_id)
     logger.info(f"Poll found successfully: {poll}")
 
     response = {
         'statusCode': 200,
         'body': json.dumps({
             'poll': poll.to_dict(),
-            'poll_options': [option.to_dict() for option in poll_options]
         })
     }
 
